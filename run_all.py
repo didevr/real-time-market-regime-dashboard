@@ -25,17 +25,10 @@ from datetime import datetime
 
 
 def print_banner():
-    """Print welcome banner."""
-    banner = """
-    ╔══════════════════════════════════════════════════════════════════╗
-    ║                                                                  ║
-    ║      CLUSTERING MARKET REGIMES USING THE WASSERSTEIN DISTANCE    ║
-    ║                                                                  ║
-    ║           Horvath, Issa, Muguruza (2021) - Reproduction          ║
-    ║                                                                  ║
-    ╚══════════════════════════════════════════════════════════════════╝
-    """
-    print(banner)
+    print("="*70)
+    print("      CLUSTERING MARKET REGIMES USING THE WASSERSTEIN DISTANCE")
+    print("           Horvath, Issa, Muguruza (2021) - Reproduction")
+    print("="*70)
 
 
 def main():
