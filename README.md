@@ -1,154 +1,139 @@
-# Wasserstein K-Means Market Regime Clustering
+# Real-Time Market Regime Clustering & Backtesting Dashboard
 
-A Python implementation of the unsupervised market regime detection algorithm from the paper:
+An advanced, full-stack quantitative finance dashboard reproducing and extending the unsupervised market regime detection algorithm from the paper:
 
 > **"Clustering Market Regimes Using the Wasserstein Distance"**
 > B. Horvath, Z. Issa, and A. Muguruza (2021)
 > [arXiv:2110.11848](https://arxiv.org/abs/2110.11848)
 
-This repository reproduces the key results from the paper, including real data analysis on SPY and synthetic experiments with Geometric Brownian Motion and Merton Jump Diffusion processes.
+This project features a high-performance **FastAPI backend** performing Wasserstein K-Means clustering and Time Series Momentum (TSMOM) backtesting, paired with a gorgeous, dark-themed **Next.js frontend dashboard** to visualize active market regimes (Bull/Low-Vol vs. Bear/High-Vol) and strategy performance.
 
-## Overview
+---
 
-Traditional clustering methods like k-means operate on finite-dimensional feature vectors. This implementation clusters **probability distributions** directly using the Wasserstein distance, enabling more robust detection of market regimes without relying solely on simple moment statistics.
+## 🏗️ Architecture Overview
 
-### Key Features
+The system aggregates live market data, clusters empirical probability distributions using optimal transport metrics, runs backtests, and serves visual telemetry:
 
-- **Wasserstein K-Means (WK-means)**: Clusters empirical distributions using the p-Wasserstein distance
-- **Moment K-Means (MK-means)**: Benchmark algorithm using statistical moments
-- **Synthetic Data Generation**: Regime-switching GBM and Merton jump diffusion
-- **Validation Metrics**: Maximum Mean Discrepancy (MMD), self-similarity scores
-- **Visualization**: Dark-themed plots and animations for regime detection
-
-## Results
-
-The algorithm successfully identifies known market crisis periods:
-- 2008-2009: Global Financial Crisis
-- 2010-2011: European Debt Crisis
-- 2015-2016: Chinese Stock Market Crash
-- 2018: Late-year Bear Market
-- 2020: COVID-19 Crash
-
-On synthetic data with known ground truth:
-| Data Type | WK-means Accuracy | MK-means Accuracy |
-|-----------|-------------------|-------------------|
-| GBM | ~82% | ~92% |
-| Merton Jump | ~99% | ~75% |
-
-WK-means significantly outperforms on non-Gaussian data (Merton), demonstrating its ability to capture higher-order distributional features beyond mean and variance.
-
-## Installation
-
-```bash
-git clone https://github.com/yourusername/regime_clustering.git
-cd regime_clustering
-pip install -r requirements.txt
+```mermaid
+flowchart TD
+  UI[Next.js App Router Dashboard] -->|HTTP / REST| API[FastAPI backend:8001]
+  API -->|Optimal Transport Calculations| POT[POT: Python Optimal Transport]
+  API -->|Historical Metrics| YF[yfinance API]
+  API -->|Backtesting Engine| TSMOM[TSMOM Backtest Utility]
 ```
 
-### Requirements
+* **Backend (`api.py`)**: Computes empirical probability distributions of overlapping log-return windows, runs the Wasserstein distance-based K-Means algorithm, re-orders clusters by variance, and computes TSMOM signal lines.
+* **Frontend (`frontend/`)**: Renders cumulative returns comparisons, drawdowns, and live regime state metrics using React, Tailwind CSS, and Recharts.
 
-- Python 3.8+
-- NumPy, SciPy, Pandas
-- Matplotlib, Seaborn
-- scikit-learn
-- POT (Python Optimal Transport)
-- yfinance (optional, for downloading data)
+---
 
-## Usage
+## ⚡ Key Features
 
-### Run All Experiments
+* **Wasserstein K-Means (WK-means)**: Clusters empirical distributions directly using the 1D Wasserstein distance rather than simple statistical moments, enabling superior capture of non-Gaussian tails and jump dynamics.
+* **Moment K-Means (MK-means) Benchmark**: Computes standard moment-based clustering (variance/skewness/kurtosis) for comparative accuracy.
+* **Synthetic Generative Models**: Regime-switching Geometric Brownian Motion (GBM) and Merton Jump Diffusion processes to test model classification boundaries.
+* **TSMOM Strategy Backtester**: Evaluates Time Series Momentum performance across regimes, tracking cumulative returns against a benchmark Buy-and-Hold strategy.
+* **Dynamic API Endpoints**: Serving live regime classifications (`/analyze`) and backtest statistics (`/backtest/tsmom`).
 
+---
+
+## 🏁 Getting Started
+
+### 1. Backend Server Setup
+1. Open your terminal and navigate to the root directory:
+   ```bash
+   cd real-time-market-regime-dashboard
+   ```
+2. Set up a virtual environment and install dependencies:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+3. Run the FastAPI development server (defaults to port `8001`):
+   ```bash
+   python api.py
+   ```
+   * *Swagger Documentation is available at [http://localhost:8001/docs](http://localhost:8001/docs).*
+
+### 2. Frontend Dashboard Setup
+1. Open a new terminal window and navigate to the frontend directory:
+   ```bash
+   cd real-time-market-regime-dashboard/frontend
+   ```
+2. Install Node dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Next.js development server (defaults to port `3000`):
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 📈 Quantitative Research Scripts
+You can run standalone experiments and view local plots:
 ```bash
-# Full run (takes ~5-10 minutes)
+# Run all experiments (Synthetic + Real Data on SPY)
 python run_all.py
 
-# Quick demonstration (fewer iterations)
-python run_all.py --quick
-```
-
-### Run Individual Components
-
-```bash
-# Real data analysis only (SPY)
+# Run only real data SPY analysis
 python main_real_data.py
 
-# Synthetic experiments only
+# Run only synthetic GBM & Merton experiments
 python main_synthetic.py
-```
 
-### View Generated Figures
-
-```bash
-# Display all figures in a grid
+# View generated figures in a grid layout
 python view_figures.py
-
-# Display in pages of 9
-python view_figures.py --pages
 ```
 
-## Project Structure
+---
 
-```
-regime_clustering/
-├── wasserstein_kmeans.py   # Core algorithms (WK-means, MK-means, MMD)
-├── synthetic_data.py       # GBM and Merton data generators
-├── visualization.py        # Plotting functions and animations
-├── main_real_data.py       # SPY analysis script
-├── main_synthetic.py       # Synthetic experiments
-├── run_all.py              # Master script
-├── view_figures.py         # Figure viewer utility
-├── requirements.txt        # Dependencies
-└── figures/                # Generated plots and animations
-```
+## 📊 Key Research Findings
 
-## Algorithm
+On synthetic data with known ground truth regimes:
+* **WK-means (Wasserstein)** outperforms benchmark clustering models on non-Gaussian datasets with heavy tails (such as the Merton Jump Diffusion), achieving **~99% classification accuracy** compared to **~75%** for moment-based clustering.
+* The algorithm successfully captures historical crisis regimes including the **2008 Financial Crisis**, the **2015-2016 Chinese Market Crash**, and the **2020 COVID-19 Liquidity Shock**.
 
-The Wasserstein K-Means algorithm:
+---
 
-1. **Stream Lift**: Convert price series to overlapping windows of log returns
-2. **Empirical Measures**: Treat each window as an empirical probability distribution
-3. **Wasserstein Distance**: Measure dissimilarity between distributions using optimal transport
-4. **K-Means Clustering**: Iteratively assign distributions to clusters and update centroids (Wasserstein barycenters)
+## 📋 API Spec
 
-## Key Concepts
+### 1. Analyze Market Regime
+* **Endpoint**: `GET /analyze`
+* **Query Parameters**: `ticker` (string, e.g. `SPY`), `window_size` (int, default `63`), `n_clusters` (int, default `2`).
+* **Response**:
+  ```json
+  {
+    "ticker": "SPY",
+    "regime": 1,
+    "label": "Bear/High Vol",
+    "last_updated": "2026-08-21",
+    "window_size": 63
+  }
+  ```
 
-### Wasserstein Distance (1D)
-
-For empirical measures with sorted atoms:
-```
-W_p(μ, ν)^p = (1/N) Σ |α_i - β_i|^p
-```
-
-### Wasserstein Barycenter
-
-For p=1: Element-wise median of sorted quantiles
-For p=2: Element-wise mean of sorted quantiles
-
-### Maximum Mean Discrepancy (MMD)
-
-Used for cluster validation:
-```
-MMD²(P, Q) = E[k(X,X')] + E[k(Y,Y')] - 2E[k(X,Y)]
-```
-
-## Citation
-
-If you use this code in your research, please cite the original paper:
-
-```bibtex
-@article{horvath2021clustering,
-  title={Clustering Market Regimes Using the Wasserstein Distance},
-  author={Horvath, Blanka and Issa, Zacharia and Muguruza, Aitor},
-  journal={arXiv preprint arXiv:2110.11848},
-  year={2021}
-}
-```
-
-## License
-
-This implementation is provided for educational and research purposes. The methodology belongs to the original authors.
-
-## Acknowledgments
-
-- Original paper authors: B. Horvath, Z. Issa, and A. Muguruza
-- SPY data sourced from Yahoo Finance
+### 2. Run TSMOM Backtest
+* **Endpoint**: `GET /backtest/tsmom`
+* **Query Parameters**: `ticker` (string, e.g. `BTC-USD`), `lookback` (int, default `252`).
+* **Response**:
+  ```json
+  {
+    "ticker": "BTC-USD",
+    "metrics": {
+      "total_return_tsmom": 1.45,
+      "total_return_buyhold": 0.88
+    },
+    "chart_data": [
+      {
+        "date": "2026-08-21",
+        "price": 62500.0,
+        "tsmom_cum": 2.45,
+        "buyhold_cum": 1.88,
+        "signal": 1
+      }
+    ]
+  }
+  ```
